@@ -1,4 +1,4 @@
-# Comparaison des URLs trouvées pour entities.fr
+# Comparaison des URLs trouvées pour example.com
 
 ## Nombre total d'URLs par outil
 
