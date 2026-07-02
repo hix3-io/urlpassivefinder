@@ -1,0 +1,16 @@
+# binaries
+urlpassivefinder
+/upf
+*.exe
+bin/
+# go
+*.test
+*.out
+vendor/
+# recon output / data (never commit scan results)
+*.txt
+!requirements*.txt
+output/
+results/
+*.json
+!go.sum
