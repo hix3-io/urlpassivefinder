@@ -36,6 +36,7 @@ urlpassivefinder -d example.com -p wayback,commoncrawl
 # JSON output with filtering
 urlpassivefinder -d example.com --json --filter js,css,png
 ```
+## Demo 
 
 <img width="800" height="443" alt="ezgif-79dd2d5fbd88db69" src="https://github.com/user-attachments/assets/f5cbd142-adeb-4220-9e86-906caa2e34e3" />
 
