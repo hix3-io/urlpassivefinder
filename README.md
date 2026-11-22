@@ -1,6 +1,7 @@
 # URLPassiveFinder
 
-[![Version](https://img.shields.io/badge/version-v0.1.0-blue)](https://github.com/hix3-io/urlpassivefinder)
+[![Release](https://img.shields.io/github/v/release/hix3-io/urlpassivefinder)](https://github.com/hix3-io/urlpassivefinder/releases/latest)
+[![CI](https://github.com/hix3-io/urlpassivefinder/actions/workflows/ci.yml/badge.svg)](https://github.com/hix3-io/urlpassivefinder/actions/workflows/ci.yml)
 [![Go](https://img.shields.io/badge/go-1.22-blue)](https://go.dev)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
@@ -9,7 +10,7 @@ High-performance passive URL discovery tool that combines the best techniques fr
 ## Features
 
 - 🚀 **Fast** - Concurrent fetching with worker pools
-- 🔍 **Comprehensive** - 6+ data sources (Wayback, CommonCrawl, OTX, URLScan, VirusTotal, GitHub)
+- 🔍 **Comprehensive** - 10 data sources (Wayback, CommonCrawl, OTX, URLScan, VirusTotal, GitHub, crt.sh, Shodan, SecurityTrails, Censys)
 - 💾 **Memory Efficient** - Streaming architecture, no bulk loading
 - 🎯 **Smart Filtering** - Extension, MIME type, and scope filtering
 - 🔄 **Resilient** - Per-source error handling and rate limiting
@@ -57,6 +58,19 @@ filters:
   extensions: [.jpg, .png, .css, .js]
 ```
 
+API keys can also (or only) be provided through environment variables —
+no config file required:
+
+| Environment variable | Provider |
+|----------------------|----------|
+| `URLSCAN_API_KEY` | URLScan |
+| `VT_API_KEY` | VirusTotal |
+| `GITHUB_TOKEN` | GitHub |
+| `OTX_API_KEY` | AlienVault OTX |
+| `SHODAN_API_KEY` | Shodan |
+| `SECURITYTRAILS_API_KEY` | SecurityTrails |
+| `CENSYS_API_ID` / `CENSYS_API_SECRET` | Censys |
+
 ## Providers
 
 | Provider | API Key | Default Rate Limit |
@@ -67,6 +81,10 @@ filters:
 | URLScan | Optional | 2 req/s |
 | VirusTotal | Required | 4 req/min |
 | GitHub | Optional | 30 req/min |
+| crt.sh | No | 10 req/s |
+| Shodan | Required | — |
+| SecurityTrails | Required | — |
+| Censys | Required (ID + secret) | — |
 
 ## Performance
 
@@ -76,7 +94,9 @@ filters:
 
 ## Documentation
 
-See [CLAUDE.md](CLAUDE.md) for detailed architecture and implementation details.
+- [Passive URL discovery analysis](docs/PASSIVE_URL_DISCOVERY_ANALYSIS.md) — methodology and data-source evaluation
+- [Techniques](docs/BEST_TECHNIQUES_URL_DISCOVERY.md) — the best techniques harvested from the ecosystem
+- [Tool comparison](docs/URL_COMPARISON.md) — how this tool compares to gau, waymore and friends
 
 ## License
 

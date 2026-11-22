@@ -45,6 +45,12 @@ type PerformanceConfig struct {
 func LoadConfig(path string) (*Config, error) {
 	config := getDefaultConfig()
 
+	// Load environment variables for API keys.
+	// Must run before any early return so that users configuring
+	// exclusively through environment variables (no YAML file) get
+	// their keys applied. Environment always takes precedence.
+	config.loadEnvVars()
+
 	// If no path specified, try default locations
 	if path == "" {
 		homeDir, _ := os.UserHomeDir()
@@ -159,10 +165,14 @@ func getDefaultConfig() *Config {
 // loadEnvVars loads API keys from environment variables
 func (c *Config) loadEnvVars() {
 	envMappings := map[string]string{
-		"urlscan":    "URLSCAN_API_KEY",
-		"virustotal": "VT_API_KEY",
-		"github":     "GITHUB_TOKEN",
-		"otx":        "OTX_API_KEY",
+		"urlscan":        "URLSCAN_API_KEY",
+		"virustotal":     "VT_API_KEY",
+		"github":         "GITHUB_TOKEN",
+		"otx":            "OTX_API_KEY",
+		"shodan":         "SHODAN_API_KEY",
+		"securitytrails": "SECURITYTRAILS_API_KEY",
+		"censys_id":      "CENSYS_API_ID",
+		"censys_secret":  "CENSYS_API_SECRET",
 	}
 
 	for provider, envVar := range envMappings {

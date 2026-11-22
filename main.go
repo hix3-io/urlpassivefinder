@@ -201,7 +201,6 @@ func initializeProviders(config *Config) []Provider {
 		"shodan":         NewShodanProvider,
 		"securitytrails": NewSecurityTrailsProvider,
 		"censys":         NewCensysProvider,
-		"threatcrowd":    NewThreatCrowdProvider,
 	}
 
 	// Initialize requested providers
