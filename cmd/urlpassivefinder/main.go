@@ -12,6 +12,14 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/hix3-io/urlpassivefinder/internal/checker"
+	"github.com/hix3-io/urlpassivefinder/internal/config"
+	"github.com/hix3-io/urlpassivefinder/internal/dedup"
+	"github.com/hix3-io/urlpassivefinder/internal/filter"
+	"github.com/hix3-io/urlpassivefinder/internal/output"
+	"github.com/hix3-io/urlpassivefinder/internal/providers"
+	"github.com/hix3-io/urlpassivefinder/internal/worker"
 )
 
 const version = "v0.4.0"
@@ -50,7 +58,7 @@ func main() {
 	}
 
 	// Load configuration
-	config, err := LoadConfig(*configFlag)
+	cfg, err := config.LoadConfig(*configFlag)
 	if err != nil && *configFlag != "" {
 		log.Fatalf("Error loading config: %v", err)
 	}
@@ -77,39 +85,39 @@ func main() {
 	}()
 
 	// Initialize components
-	dedup := NewDeduplicator()
-	filter := NewFilter(strings.Split(*filterFlag, ","), *noFilterFlag)
-	output := NewOutput(*outputFlag, *jsonFlag, *jsonlFlag)
-	defer output.Close()
+	dedupe := dedup.NewDeduplicator()
+	flt := filter.NewFilter(strings.Split(*filterFlag, ","), *noFilterFlag)
+	out := output.NewOutput(*outputFlag, *jsonFlag, *jsonlFlag)
+	defer out.Close()
 
 	// Initialize providers
-	providers := initializeProviders(config)
-	if len(providers) == 0 {
+	providerList := initializeProviders(cfg)
+	if len(providerList) == 0 {
 		log.Fatal("No providers available")
 	}
 
 	// Create worker pool
-	pool := NewWorkerPool(*threadsFlag)
+	pool := worker.NewWorkerPool(*threadsFlag, *verboseFlag)
 	results := make(chan string, 10000)
-	
+
 	// Start result processor
 	var wg sync.WaitGroup
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		processResults(results, dedup, filter, output)
+		processResults(results, dedupe, flt, out)
 	}()
 
 	// Start workers
-	pool.Start(ctx, providers)
+	pool.Start(ctx, providerList)
 
 	// Submit work
 	for _, domain := range domains {
 		if *verboseFlag {
 			log.Printf("Processing domain: %s", domain)
 		}
-		for _, provider := range providers {
-			work := Work{
+		for _, provider := range providerList {
+			work := worker.Work{
 				Domain:   domain,
 				Provider: provider,
 				Results:  results,
@@ -124,7 +132,7 @@ func main() {
 	wg.Wait()
 
 	if !*silentFlag && *verboseFlag {
-		printStats(dedup.Count())
+		printStats(dedupe.Count())
 	}
 }
 
@@ -185,33 +193,33 @@ func getInputDomains() []string {
 	return domains
 }
 
-func initializeProviders(config *Config) []Provider {
-	var providers []Provider
+func initializeProviders(cfg *config.Config) []worker.Provider {
+	var providerList []worker.Provider
 	requestedProviders := strings.Split(*providersFlag, ",")
 
 	// Map of available providers
-	availableProviders := map[string]func(*Config) Provider{
-		"wayback":        NewWaybackProvider,
-		"commoncrawl":    NewCommonCrawlProvider,
-		"otx":            NewOTXProvider,
-		"urlscan":        NewURLScanProvider,
-		"virustotal":     NewVirusTotalProvider,
-		"github":         NewGitHubProvider,
-		"crtsh":          NewCrtshProvider,
-		"shodan":         NewShodanProvider,
-		"securitytrails": NewSecurityTrailsProvider,
-		"censys":         NewCensysProvider,
+	availableProviders := map[string]func(*config.Config) worker.Provider{
+		"wayback":        providers.NewWaybackProvider,
+		"commoncrawl":    providers.NewCommonCrawlProvider,
+		"otx":            providers.NewOTXProvider,
+		"urlscan":        providers.NewURLScanProvider,
+		"virustotal":     providers.NewVirusTotalProvider,
+		"github":         providers.NewGitHubProvider,
+		"crtsh":          providers.NewCrtshProvider,
+		"shodan":         providers.NewShodanProvider,
+		"securitytrails": providers.NewSecurityTrailsProvider,
+		"censys":         providers.NewCensysProvider,
 	}
 
 	// Initialize requested providers
 	for _, name := range requestedProviders {
 		name = strings.TrimSpace(strings.ToLower(name))
-		
+
 		if name == "all" {
 			// Add all available providers
 			for providerName, initFunc := range availableProviders {
-				if config.IsProviderEnabled(providerName) {
-					providers = append(providers, initFunc(config))
+				if cfg.IsProviderEnabled(providerName) {
+					providerList = append(providerList, initFunc(cfg))
 					if *verboseFlag {
 						log.Printf("Initialized provider: %s", providerName)
 					}
@@ -219,8 +227,8 @@ func initializeProviders(config *Config) []Provider {
 			}
 			break
 		} else if initFunc, exists := availableProviders[name]; exists {
-			if config.IsProviderEnabled(name) {
-				providers = append(providers, initFunc(config))
+			if cfg.IsProviderEnabled(name) {
+				providerList = append(providerList, initFunc(cfg))
 				if *verboseFlag {
 					log.Printf("Initialized provider: %s", name)
 				}
@@ -228,23 +236,23 @@ func initializeProviders(config *Config) []Provider {
 		}
 	}
 
-	return providers
+	return providerList
 }
 
-func processResults(results <-chan string, dedup *Deduplicator, filter *Filter, output *Output) {
+func processResults(results <-chan string, dedupe *dedup.Deduplicator, flt *filter.Filter, out *output.Output) {
 	var collectedURLs []string
 	for url := range results {
 		// Normalize URL
-		normalized := NormalizeURL(url)
+		normalized := dedup.NormalizeURL(url)
 		
 		// Check if already seen
-		if dedup.IsSeen(normalized) {
+		if dedupe.IsSeen(normalized) {
 			continue
 		}
-		dedup.Add(normalized)
+		dedupe.Add(normalized)
 
 		// Apply filters
-		if filter.ShouldFilter(normalized) {
+		if flt.ShouldFilter(normalized) {
 			continue
 		}
 
@@ -253,14 +261,14 @@ func processResults(results <-chan string, dedup *Deduplicator, filter *Filter, 
 			collectedURLs = append(collectedURLs, url)
 		} else {
 			// Direct output
-			output.Write(url)
+			out.Write(url)
 		}
 	}
 
 	// URL checking phase
 	if *checkFlag && len(collectedURLs) > 0 {
-		grouped := CheckURLs(collectedURLs, *threadsFlag, *verboseFlag)
-		PrintCheckedResults(grouped, *only200Flag, *sortSizeFlag)
+		grouped := checker.CheckURLs(collectedURLs, *threadsFlag, *verboseFlag)
+		checker.PrintCheckedResults(grouped, *only200Flag, *sortSizeFlag)
 		return
 	}
 }

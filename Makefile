@@ -7,7 +7,7 @@ LDFLAGS  := -s -w
 all: vet test build
 
 build:
-	go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o $(BIN) .
+	go build $(GOFLAGS) -ldflags "$(LDFLAGS)" -o $(BIN) ./cmd/urlpassivefinder
 
 test:
 	go test -race ./...
@@ -18,7 +18,7 @@ vet:
 lint: vet
 
 install:
-	go install $(GOFLAGS) -ldflags "$(LDFLAGS)" .
+	go install $(GOFLAGS) -ldflags "$(LDFLAGS)" ./cmd/urlpassivefinder
 
 clean:
 	rm -f $(BIN)

@@ -1,4 +1,4 @@
-package main
+package worker
 
 import (
 	"context"
@@ -22,15 +22,17 @@ type Work struct {
 // WorkerPool manages concurrent workers
 type WorkerPool struct {
 	workers  int
+	verbose  bool
 	workChan chan Work
 	wg       sync.WaitGroup
 	ctx      context.Context
 }
 
 // NewWorkerPool creates a new worker pool
-func NewWorkerPool(workers int) *WorkerPool {
+func NewWorkerPool(workers int, verbose bool) *WorkerPool {
 	return &WorkerPool{
 		workers:  workers,
+		verbose:  verbose,
 		workChan: make(chan Work, workers*10),
 	}
 }
@@ -53,13 +55,13 @@ func (p *WorkerPool) worker(id int) {
 	for {
 		select {
 		case <-p.ctx.Done():
-			if *verboseFlag {
+			if p.verbose {
 				log.Printf("Worker %d: shutting down due to context cancellation", id)
 			}
 			return
 		case work, ok := <-p.workChan:
 			if !ok {
-				if *verboseFlag {
+				if p.verbose {
 					log.Printf("Worker %d: work channel closed", id)
 				}
 				return
@@ -67,11 +69,11 @@ func (p *WorkerPool) worker(id int) {
 			
 			// Process the work
 			if err := work.Provider.Fetch(p.ctx, work.Domain, work.Results); err != nil {
-				if *verboseFlag {
+				if p.verbose {
 					log.Printf("Worker %d: error fetching from %s for %s: %v", 
 						id, work.Provider.Name(), work.Domain, err)
 				}
-			} else if *verboseFlag {
+			} else if p.verbose {
 				log.Printf("Worker %d: completed %s for %s", 
 					id, work.Provider.Name(), work.Domain)
 			}

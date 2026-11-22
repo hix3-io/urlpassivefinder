@@ -19,7 +19,7 @@ High-performance passive URL discovery tool that combines the best techniques fr
 ## Installation
 
 ```bash
-go install github.com/hix3-io/urlpassivefinder@latest
+go install github.com/hix3-io/urlpassivefinder/cmd/urlpassivefinder@latest
 ```
 
 ## Quick Start

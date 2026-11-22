@@ -1,6 +1,9 @@
-package main
+package providers
 
 import (
+	"github.com/hix3-io/urlpassivefinder/internal/config"
+	"github.com/hix3-io/urlpassivefinder/internal/worker"
+
 	"bufio"
 	"context"
 	"encoding/base64"
@@ -20,7 +23,7 @@ type WaybackProvider struct {
 }
 
 // NewWaybackProvider creates a new Wayback Machine provider
-func NewWaybackProvider(config *Config) Provider {
+func NewWaybackProvider(config *config.Config) worker.Provider {
 	return &WaybackProvider{
 		limiter: rate.NewLimiter(rate.Limit(config.GetRateLimit("wayback")), 1),
 		client: &http.Client{
@@ -147,7 +150,7 @@ type CommonCrawlProvider struct {
 }
 
 // NewCommonCrawlProvider creates a new Common Crawl provider
-func NewCommonCrawlProvider(config *Config) Provider {
+func NewCommonCrawlProvider(config *config.Config) worker.Provider {
 	return &CommonCrawlProvider{
 		limiter: rate.NewLimiter(rate.Limit(config.GetRateLimit("commoncrawl")), 1),
 		client: &http.Client{
@@ -238,7 +241,7 @@ type OTXProvider struct {
 }
 
 // NewOTXProvider creates a new OTX provider
-func NewOTXProvider(config *Config) Provider {
+func NewOTXProvider(config *config.Config) worker.Provider {
 	return &OTXProvider{
 		limiter: rate.NewLimiter(rate.Limit(config.GetRateLimit("otx")), 1),
 		client: &http.Client{
@@ -310,7 +313,7 @@ type URLScanProvider struct {
 }
 
 // NewURLScanProvider creates a new URLScan provider
-func NewURLScanProvider(config *Config) Provider {
+func NewURLScanProvider(config *config.Config) worker.Provider {
 	return &URLScanProvider{
 		limiter: rate.NewLimiter(rate.Limit(config.GetRateLimit("urlscan")), 1),
 		client: &http.Client{
@@ -447,7 +450,7 @@ type VirusTotalProvider struct {
 }
 
 // NewVirusTotalProvider creates a new VirusTotal provider
-func NewVirusTotalProvider(globalConfig *Config) Provider {
+func NewVirusTotalProvider(globalConfig *config.Config) worker.Provider {
 	config := globalConfig.Providers["virustotal"]
 	client := &http.Client{Timeout: 30 * time.Second}
 	limiter := rate.NewLimiter(rate.Every(time.Duration(config.RateLimit)*time.Millisecond), 1)
@@ -530,7 +533,7 @@ type GitHubProvider struct {
 }
 
 // NewGitHubProvider creates a new GitHub provider
-func NewGitHubProvider(globalConfig *Config) Provider {
+func NewGitHubProvider(globalConfig *config.Config) worker.Provider {
 	config := globalConfig.Providers["github"]
 	client := &http.Client{Timeout: 30 * time.Second}
 	limiter := rate.NewLimiter(rate.Every(time.Duration(config.RateLimit)*time.Millisecond), 1)
@@ -604,7 +607,7 @@ type CrtshProvider struct {
 }
 
 // NewCrtshProvider creates a new crt.sh provider
-func NewCrtshProvider(config *Config) Provider {
+func NewCrtshProvider(config *config.Config) worker.Provider {
 	return &CrtshProvider{
 		limiter: rate.NewLimiter(rate.Limit(config.GetRateLimit("crtsh")), 1),
 		client: &http.Client{
@@ -683,7 +686,7 @@ type ShodanProvider struct {
 }
 
 // NewShodanProvider creates a new Shodan provider
-func NewShodanProvider(config *Config) Provider {
+func NewShodanProvider(config *config.Config) worker.Provider {
 	return &ShodanProvider{
 		limiter: rate.NewLimiter(rate.Limit(config.GetRateLimit("shodan")), 1),
 		client: &http.Client{
@@ -790,7 +793,7 @@ type SecurityTrailsProvider struct {
 }
 
 // NewSecurityTrailsProvider creates a new SecurityTrails provider
-func NewSecurityTrailsProvider(config *Config) Provider {
+func NewSecurityTrailsProvider(config *config.Config) worker.Provider {
 	return &SecurityTrailsProvider{
 		limiter: rate.NewLimiter(rate.Limit(config.GetRateLimit("securitytrails")), 1),
 		client: &http.Client{
@@ -898,7 +901,7 @@ type CensysProvider struct {
 }
 
 // NewCensysProvider creates a new Censys provider
-func NewCensysProvider(config *Config) Provider {
+func NewCensysProvider(config *config.Config) worker.Provider {
 	return &CensysProvider{
 		limiter: rate.NewLimiter(rate.Limit(config.GetRateLimit("censys")), 1),
 		client: &http.Client{
